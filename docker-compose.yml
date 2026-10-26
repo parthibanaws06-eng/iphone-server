@@ -1,0 +1,52 @@
+services:
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: photovault-server
+    restart: unless-stopped
+    ports:
+      - "${PORT:-5000}:5000"
+    environment:
+      - PORT=5000
+      - NODE_ENV=production
+      - MONGODB_URI=${MONGODB_URI:-mongodb://mongodb:27017/photovault}
+      - JWT_SECRET=${JWT_SECRET:-photovault-production-jwt-secret-key-32chars}
+      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-7d}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY:-0123456789abcdef0123456789abcdef}
+      - CLOUDINARY_PERSONAL_CLOUD_NAME=${CLOUDINARY_PERSONAL_CLOUD_NAME:-dri7edc3h}
+      - CLOUDINARY_PERSONAL_API_KEY=${CLOUDINARY_PERSONAL_API_KEY:-625297454914865}
+      - CLOUDINARY_PERSONAL_API_SECRET=${CLOUDINARY_PERSONAL_API_SECRET:-bv6TBu9n72Cd9R_n5zu8_wGfRmY}
+      - CLOUDINARY_FAMILY_CLOUD_NAME=${CLOUDINARY_FAMILY_CLOUD_NAME:-dipszdg23}
+      - CLOUDINARY_FAMILY_API_KEY=${CLOUDINARY_FAMILY_API_KEY:-632257459348129}
+      - CLOUDINARY_FAMILY_API_SECRET=${CLOUDINARY_FAMILY_API_SECRET:-bPsT_BKygxCIvsphgxF9FSvJOU4}
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - photovault-network
+
+  mongodb:
+    image: mongo:7.0
+    container_name: photovault-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - photovault-network
+
+volumes:
+  mongodb_data:
+    driver: local
+
+networks:
+  photovault-network:
+    driver: bridge
